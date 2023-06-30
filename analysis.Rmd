@@ -14,6 +14,9 @@ library(ggplot2)
 library(scales)
 
 set.seed(42)
+
+if (!dir.exists("figures"))
+  dir.create("figures")
 ```
 
 ## Read data
@@ -70,7 +73,7 @@ ggplot(theta_df, aes(x=site)) +
   theme_bw() +
   theme(strip.placement="outside", strip.background=element_blank(),
         panel.grid.minor.y=element_blank())
-ggsave("proportions.pdf", width=7, height=4)
+ggsave("figures/proportions.pdf", width=7, height=4)
 ```
 
 ## Sample posterior differences in mutation proportions between diseases
@@ -106,7 +109,7 @@ ggplot(diff_df, aes(x=site)) +
   theme_bw() +
   theme(strip.placement="outside", strip.background=element_blank(),
         panel.grid.minor.y=element_blank())
-ggsave("differences.pdf", width=7, height=4)
+ggsave("figures/differences.pdf", width=7, height=4)
 
 # The number of positions whose 95% central credible interval excludes zero
 with(diff_df, sum(0<q025 | 0>q975))
