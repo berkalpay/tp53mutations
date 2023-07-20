@@ -15,8 +15,8 @@ library(scales)
 
 set.seed(42)
 
-if (!dir.exists("figures"))
-  dir.create("figures")
+if (!dir.exists("figures")) dir.create("figures")
+if (!dir.exists("results")) dir.create("results")
 ```
 
 ## Read data
@@ -57,6 +57,7 @@ for (d in names(posts)) {
   thetas[["q975"]] <- c(thetas[["q975"]], apply(posts[[d]], 2, quantile, probs=0.975))
 }
 theta_df <- as_tibble(thetas)
+write_csv(theta_df, "results/proportions.csv")
 ```
 
 ```{r}
@@ -95,6 +96,7 @@ for (combo in combos) {
                               q975=apply(diff, 2, quantile, probs=0.975)))
 }
 diff_df <- as_tibble(diff_df)
+write_csv(diff_df, "results/differences.csv")
 ```
 
 ```{r}
