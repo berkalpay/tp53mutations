@@ -17,23 +17,23 @@ set.seed(42)
 
 if (!dir.exists("figures")) dir.create("figures")
 if (!dir.exists("results")) dir.create("results")
+
+N <- 10^5  # Set the simulation size
 ```
 
+# Compare mutation proportions among myeloid neoplasms
 
 ## Read neoplasm data
 
 Read the number of times each of $l$ codons were mutated across patients with each disease $d$,
 $$y_d=(y_{d1}, y_{d2}, \ldots, y_{dl}).$$
+
 ```{r}
 (df <- filter(read_csv("data.csv", show_col_types=F),
               AML>0 | MDS>0 | `AML-MRC`>0))  # Disregard sites with no mutations
-(n <- apply(df[,2:4], 2, sum))  # Compute the sample size of each disease
+(apply(df[,2:4], 2, sum))  # Compute the sample size of each disease
 (l <- nrow(df))  # The number of sites considered
-N <- 10^5  # Set the simulation size
 ```
-
-
-# Compare mutation proportions among myeloid neoplasms
 
 ## Sample posterior proportions of mutations
 
@@ -139,8 +139,8 @@ with(diff_df, sum(0<q025 | 0>q975))
 # Compare myeloid neoplasm mutation proportions with ISB-CGC
 
 ```{r}
-# Pool the blood data
-df$blood <- apply(df[2:4], 1, sum)
+df <- read_csv("data.csv", show_col_types=F)
+df$blood <- apply(df[2:4], 1, sum) # Pool the blood data
 ```
 
 ## Read ISB-CGC data
@@ -158,7 +158,12 @@ for (i in df$site) {
     isb <- c(isb, 0)
 }
 df$isb <- isb
-(df)
+```
+
+```{r}
+df <- filter(df, blood>0 | isb>0)
+(apply(df[,5:6], 2, sum))
+(l <- nrow(df))
 ```
 
 ## Sample posterior proportions of mutations
@@ -169,7 +174,7 @@ We will infer ISB-CGC proportions under a prior of $\theta_{\text{ISB}}=0$.
 
 ```{r}
 posts <- list()
-posts[["isb"]] <- rdirichlet(N, rep(0, l) + df$isb)
+posts[["isb"]] <- rdirichlet(N, rep(0.1, l) + df$isb)
 posts[["blood"]] <- rdirichlet(N, df$isb/sum(df$isb) * 200 + df$blood)
 
 theta_df <- compute_theta_stats(posts)
@@ -185,9 +190,7 @@ ggsave("figures/proportions_blood_ISB.pdf", plot_thetas(theta_df),
 diff_df <- sample_diffs(posts, list(c("isb", "blood")))
 write_csv(diff_df, "results/differences_blood_ISB.csv")
 
-diff_plot <- plot_diffs(diff_df) +
-  geom_label(data = . %>% filter(abs(mean)>.01), aes(y=mean, label=site),
-             hjust=-0.3, size=2.2, label.size=NA)
+diff_plot <- plot_diffs(diff_df)
 ggsave("figures/differences_blood_ISB.pdf", diff_plot,
        width=7, height=4)
 
