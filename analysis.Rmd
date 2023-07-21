@@ -19,9 +19,8 @@ if (!dir.exists("figures")) dir.create("figures")
 if (!dir.exists("results")) dir.create("results")
 ```
 
-# Compare mutation proportions among myeloid neoplasms
 
-## Read data
+## Read neoplasm data
 
 Read the number of times each of $l$ codons were mutated across patients with each disease $d$,
 $$y_d=(y_{d1}, y_{d2}, \ldots, y_{dl}).$$
@@ -30,10 +29,11 @@ $$y_d=(y_{d1}, y_{d2}, \ldots, y_{dl}).$$
               AML>0 | MDS>0 | `AML-MRC`>0))  # Disregard sites with no mutations
 (n <- apply(df[,2:4], 2, sum))  # Compute the sample size of each disease
 (l <- nrow(df))  # The number of sites considered
-combos <- list(c("AML", "MDS"), c("MDS", "AML-MRC"), c("AML", "AML-MRC"))
 N <- 10^5  # Set the simulation size
 ```
 
+
+# Compare mutation proportions among myeloid neoplasms
 
 ## Sample posterior proportions of mutations
 
@@ -108,7 +108,8 @@ sample_diffs <- function(posts, combos) {
   as_tibble(diff_df)
 }
 
-diff_df <- sample_diffs(posts, combos)
+diff_df <- sample_diffs(posts,
+                        list(c("AML", "MDS"), c("MDS", "AML-MRC"), c("AML", "AML-MRC")))
 write_csv(diff_df, "results/differences_blood.csv")
 ```
 
