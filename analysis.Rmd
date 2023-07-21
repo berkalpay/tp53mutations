@@ -173,13 +173,13 @@ df <- filter(df, blood>0 | isb>0)
 ## Sample posterior proportions of mutations
 
 We will use the number of mutations at each codon observed in ISB-CGC to construct a prior $\theta_{\text{blood}}$ over the pooled myeloid neoplasm data.
-The prior is weighted such that $\sum \theta_{\text{blood}}=200.$
+The prior is weighted such that $\sum \theta_{\text{blood}}=35.$
 We will infer ISB-CGC proportions under a prior of $\theta_{\text{ISB}}=0.1$.
 
 ```{r}
 posts <- list()
 posts[["isb"]] <- rdirichlet(N, rep(0.1, l) + df$isb)
-posts[["blood"]] <- rdirichlet(N, df$isb/sum(df$isb) * 200 + df$blood)
+posts[["blood"]] <- rdirichlet(N, df$isb/sum(df$isb) * 35 + df$blood)
 
 theta_df <- compute_theta_stats(posts)
 write_csv(theta_df, "results/proportions_blood_ISB.csv")
