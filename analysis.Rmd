@@ -33,6 +33,7 @@ $$y_d=(y_{d1}, y_{d2}, \ldots, y_{dl}).$$
               AML>0 | MDS>0 | `AML-MRC`>0))  # Disregard sites with no mutations
 (apply(df[,2:4], 2, sum))  # Compute the sample size of each disease
 (l <- nrow(df))  # The number of sites considered
+hotspots <- c(175, 220, 245, 248, 249, 273, 282)
 ```
 
 ## Sample posterior proportions of mutations
@@ -117,9 +118,11 @@ write_csv(diff_df, "results/differences_blood.csv")
 
 ```{r}
 plot_diffs <- function(diff_df) {
-  p <- ggplot(diff_df, aes(x=site)) +
+  ggplot(diff_df, aes(x=site)) +
     geom_segment(aes(xend=site, y=q025, yend=q975), color="orange") +
-    geom_point(aes(y=mean), size=0.2) +
+    geom_point(aes(y=mean, color=site %in% hotspots), size=0.2, show.legend=F) +
+    scale_color_manual(values=c("black", "red")) +
+    facet_grid(rows=vars(combo)) +
     scale_x_continuous(breaks=c(1,100,200,300,393), limits=c(1,393), expand=c(0,0)) +
     scale_y_continuous(labels=percent_format()) +
     xlab("Codon") +
@@ -127,9 +130,6 @@ plot_diffs <- function(diff_df) {
     theme_bw() +
     theme(strip.placement="outside", strip.background=element_blank(),
           panel.grid.minor.y=element_blank())
-  if (length(unique(diff_df$combo)) > 1)
-    p <- p + facet_grid(rows=vars(combo))
-  p
 }
 
 (diff_plot <- plot_diffs(diff_df))
