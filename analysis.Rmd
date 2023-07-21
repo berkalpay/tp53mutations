@@ -82,7 +82,9 @@ plot_thetas <- function(theta_df) {
     theme(strip.placement="outside", strip.background=element_blank(),
           panel.grid.minor.y=element_blank())
 }
-ggsave("figures/proportions_blood.pdf", plot_thetas(theta_df),
+
+(theta_plot <- plot_thetas(theta_df))
+ggsave("figures/proportions_blood.pdf", theta_plot,
        width=7, height=4)
 ```
 
@@ -129,7 +131,9 @@ plot_diffs <- function(diff_df) {
     p <- p + facet_grid(rows=vars(combo))
   p
 }
-ggsave("figures/differences_blood.pdf", plot_diffs(diff_df),
+
+(diff_plot <- plot_diffs(diff_df))
+ggsave("figures/differences_blood.pdf", diff_plot,
        width=7, height=4)
 
 # The number of positions whose 95% central credible interval excludes zero
@@ -180,7 +184,8 @@ posts[["blood"]] <- rdirichlet(N, df$isb/sum(df$isb) * 200 + df$blood)
 theta_df <- compute_theta_stats(posts)
 write_csv(theta_df, "results/proportions_blood_ISB.csv")
 
-ggsave("figures/proportions_blood_ISB.pdf", plot_thetas(theta_df),
+(theta_plot <- plot_thetas(theta_df))
+ggsave("figures/proportions_blood_ISB.pdf", theta_plot,
        width=7, height=4)
 ```
 
@@ -190,7 +195,7 @@ ggsave("figures/proportions_blood_ISB.pdf", plot_thetas(theta_df),
 diff_df <- sample_diffs(posts, list(c("isb", "blood")))
 write_csv(diff_df, "results/differences_blood_ISB.csv")
 
-diff_plot <- plot_diffs(diff_df)
+(diff_plot <- plot_diffs(diff_df))
 ggsave("figures/differences_blood_ISB.pdf", diff_plot,
        width=7, height=4)
 
