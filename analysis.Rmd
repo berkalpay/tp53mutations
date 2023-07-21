@@ -174,7 +174,7 @@ df <- filter(df, blood>0 | isb>0)
 
 We will use the number of mutations at each codon observed in ISB-CGC to construct a prior $\theta_{\text{blood}}$ over the pooled myeloid neoplasm data.
 The prior is weighted such that $\sum \theta_{\text{blood}}=200.$
-We will infer ISB-CGC proportions under a prior of $\theta_{\text{ISB}}=0$.
+We will infer ISB-CGC proportions under a prior of $\theta_{\text{ISB}}=0.1$.
 
 ```{r}
 posts <- list()
