@@ -57,7 +57,7 @@ for (d in names(posts)) {
   thetas[["q975"]] <- c(thetas[["q975"]], apply(posts[[d]], 2, quantile, probs=0.975))
 }
 theta_df <- as_tibble(thetas)
-write_csv(theta_df, "results/proportions.csv")
+write_csv(theta_df, "results/proportions_blood.csv")
 ```
 
 ```{r}
@@ -74,7 +74,7 @@ ggplot(theta_df, aes(x=site)) +
   theme_bw() +
   theme(strip.placement="outside", strip.background=element_blank(),
         panel.grid.minor.y=element_blank())
-ggsave("figures/proportions.pdf", width=7, height=4)
+ggsave("figures/proportions_blood.pdf", width=7, height=4)
 ```
 
 ## Sample posterior differences in mutation proportions between diseases
@@ -96,7 +96,7 @@ for (combo in combos) {
                               q975=apply(diff, 2, quantile, probs=0.975)))
 }
 diff_df <- as_tibble(diff_df)
-write_csv(diff_df, "results/differences.csv")
+write_csv(diff_df, "results/differences_blood.csv")
 ```
 
 ```{r}
@@ -111,7 +111,113 @@ ggplot(diff_df, aes(x=site)) +
   theme_bw() +
   theme(strip.placement="outside", strip.background=element_blank(),
         panel.grid.minor.y=element_blank())
-ggsave("figures/differences.pdf", width=7, height=4)
+ggsave("figures/differences_blood.pdf", width=7, height=4)
+
+# The number of positions whose 95% central credible interval excludes zero
+with(diff_df, sum(0<q025 | 0>q975))
+```
+
+# Compare myeloid neoplasm mutation proportions with ISB-CGC
+
+```{r}
+# Pool the blood data
+df$blood <- apply(df[2:4], 1, sum)
+```
+
+## Read ISB-CGC data
+
+> "For variants in exons, codon number at which the variant is located (1-393). If a variant spans more than one codon, (e.g. tandem variant or deletion of several bases) only the first (5') codon is entered. For variants in introns, 0 is entered."
+> https://tp53.isb-cgc.org/help#MUT_id'
+
+```{r, message=FALSE}
+isb_codon_counts <- table(read_csv("TumorVariantDownload_r20.csv")$Codon_number)
+isb <- c()
+for (i in df$site) {
+  if (as.character(i) %in% names(isb_codon_counts))
+    isb <- c(isb, isb_codon_counts[[as.character(i)]])
+  else
+    isb <- c(isb, 0)
+}
+df$isb <- isb
+(df)
+```
+
+## Sample posterior proportions of mutations
+
+We will use the number of mutations at each codon observed in ISB-CGC to construct a prior $\theta_{\text{blood}}$ over the pooled myeloid neoplasm data.
+The prior is weighted such that $\sum \theta_{\text{blood}}=200.$
+We will infer ISB-CGC proportions under a prior of $\theta_{\text{ISB}}=0$.
+
+```{r}
+posts <- list()
+posts[["isb"]] <- rdirichlet(N, rep(0, l) + df$isb)
+posts[["blood"]] <- rdirichlet(N, df$isb/sum(df$isb) * 200 + df$blood)
+```
+
+```{r}
+# Compute posterior distribution statistics
+thetas <- list(disease=rep(names(posts), each=l),
+               site=rep(df$site, 2))
+for (d in names(posts)) {
+  thetas[["mean"]] <- c(thetas[["mean"]], apply(posts[[d]], 2, mean))
+  thetas[["q025"]] <- c(thetas[["q025"]], apply(posts[[d]], 2, quantile, probs=0.025))
+  thetas[["q975"]] <- c(thetas[["q975"]], apply(posts[[d]], 2, quantile, probs=0.975))
+}
+theta_df <- as_tibble(thetas)
+write_csv(theta_df, "results/proportions_blood_ISB.csv")
+```
+
+```{r}
+# Visualize inferred mutation proportions
+ggplot(theta_df, aes(x=site)) +
+  geom_segment(aes(xend=site, y=q025, yend=q975), color="orange") +
+  geom_point(aes(y=mean), size=0.2) +
+  facet_grid(rows=vars(disease)) +
+  scale_x_continuous(breaks=c(1,100,200,300,393), limits=c(1,393), expand=c(0,0)) +
+  scale_y_continuous(labels=percent_format(),
+                     limits=c(0, max(theta_df$q975)+0.0015), expand=c(0,0)) +
+  xlab("Codon") +
+  ylab("Posterior proportion of mutations") +
+  theme_bw() +
+  theme(strip.placement="outside", strip.background=element_blank(),
+        panel.grid.minor.y=element_blank())
+ggsave("figures/proportions_blood_ISB.pdf", width=7, height=4)
+```
+
+## Sample posterior differences in mutation proportions
+
+```{r}
+diff_df <- c()
+combos <- list(c("isb", "blood"))
+for (combo in combos) {
+  # Sample the posterior proportion differences between diseases
+  diff <- posts[[combo[1]]] - posts[[combo[2]]]
+  
+  # Collect statistics of the differences
+  diff_df <- rbind(diff_df,
+                   data.frame(combo=paste(combo[1], combo[2], sep=" - "),
+                              site=df$site,
+                              mean=apply(diff, 2, mean),
+                              q025=apply(diff, 2, quantile, probs=0.025),
+                              q975=apply(diff, 2, quantile, probs=0.975)))
+}
+diff_df <- as_tibble(diff_df)
+write_csv(diff_df, "results/differences_blood_ISB.csv")
+```
+
+```{r}
+ggplot(diff_df, aes(x=site)) +
+  geom_segment(aes(xend=site, y=q025, yend=q975), color="orange") +
+  geom_point(aes(y=mean), size=0.2) +
+  geom_label(data = . %>% filter(abs(mean)>.01), aes(y=mean, label=site), hjust=-0.3, size=2.2, label.size=NA) +
+  scale_x_continuous(breaks=c(1,100,200,300,393), limits=c(1,393), expand=c(0,0)) +
+  scale_y_continuous(labels=percent_format()) +
+  xlab("Codon") +
+  ylab("Posterior difference in proportion of mutations") +
+  theme_bw() +
+  theme(strip.placement="outside", strip.background=element_blank(),
+        panel.grid.minor.y=element_blank())
+ggsave("figures/differences_blood_ISB.pdf", width=7, height=4)
 
 # The number of positions whose 95% central credible interval excludes zero
 with(diff_df, sum(0<q025 | 0>q975))
